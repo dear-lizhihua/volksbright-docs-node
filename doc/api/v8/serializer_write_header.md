@@ -1,0 +1,3 @@
+#### `serializer.writeHeader()`
+
+Writes out a header, which includes the serialization format version.

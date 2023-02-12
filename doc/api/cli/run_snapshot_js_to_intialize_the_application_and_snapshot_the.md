@@ -1,0 +1,1 @@
+# Run snapshot.js to intialize the application and snapshot the
