@@ -2,23 +2,19 @@
 
 Here's an example showing how to use the [CPU Profiler][]:
 
-```js
-const inspector = require('node:inspector');
-const fs = require('node:fs');
-const session = new inspector.Session();
+```mjs
+import { Session } from 'node:inspector/promises';
+import fs from 'node:fs';
+const session = new Session();
 session.connect();
 
-session.post('Profiler.enable', () => {
-  session.post('Profiler.start', () => {
-    // Invoke business logic under measurement here...
+await session.post('Profiler.enable');
+await session.post('Profiler.start');
+// Invoke business logic under measurement here...
 
-    // some time later...
-    session.post('Profiler.stop', (err, { profile }) => {
-      // Write profile to disk, upload, etc.
-      if (!err) {
-        fs.writeFileSync('./profile.cpuprofile', JSON.stringify(profile));
-      }
-    });
-  });
-});
+// some time later...
+const { profile } = await session.post('Profiler.stop');
+
+// Write profile to disk, upload, etc.
+fs.writeFileSync('./profile.cpuprofile', JSON.stringify(profile));
 ```

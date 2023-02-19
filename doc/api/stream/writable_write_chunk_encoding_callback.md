@@ -1,54 +1,75 @@
-#### `writable._write(chunk, encoding, callback)`
+##### `writable.write(chunk[, encoding][, callback])`
 
 <!-- YAML
+added: v0.9.4
 changes:
-  - version: v12.11.0
-    pr-url: https://github.com/nodejs/node/pull/29639
-    description: _write() is optional when providing _writev().
+  - version: v8.0.0
+    pr-url: https://github.com/nodejs/node/pull/11608
+    description: The `chunk` argument can now be a `Uint8Array` instance.
+  - version: v6.0.0
+    pr-url: https://github.com/nodejs/node/pull/6170
+    description: Passing `null` as the `chunk` parameter will always be
+                 considered invalid now, even in object mode.
 -->
 
-* `chunk` {Buffer|string|any} The `Buffer` to be written, converted from the
-  `string` passed to [`stream.write()`][stream-write]. If the stream's
-  `decodeStrings` option is `false` or the stream is operating in object mode,
-  the chunk will not be converted & will be whatever was passed to
-  [`stream.write()`][stream-write].
-* `encoding` {string} If the chunk is a string, then `encoding` is the
-  character encoding of that string. If chunk is a `Buffer`, or if the
-  stream is operating in object mode, `encoding` may be ignored.
-* `callback` {Function} Call this function (optionally with an error
-  argument) when processing is complete for the supplied chunk.
+* `chunk` {string|Buffer|Uint8Array|any} Optional data to write. For streams
+  not operating in object mode, `chunk` must be a string, `Buffer` or
+  `Uint8Array`. For object mode streams, `chunk` may be any JavaScript value
+  other than `null`.
+* `encoding` {string|null} The encoding, if `chunk` is a string. **Default:** `'utf8'`
+* `callback` {Function} Callback for when this chunk of data is flushed.
+* Returns: {boolean} `false` if the stream wishes for the calling code to
+  wait for the `'drain'` event to be emitted before continuing to write
+  additional data; otherwise `true`.
 
-All `Writable` stream implementations must provide a
-[`writable._write()`][stream-_write] and/or
-[`writable._writev()`][stream-_writev] method to send data to the underlying
-resource.
+The `writable.write()` method writes some data to the stream, and calls the
+supplied `callback` once the data has been fully handled. If an error
+occurs, the `callback` will be called with the error as its
+first argument. The `callback` is called asynchronously and before `'error'` is
+emitted.
 
-[`Transform`][] streams provide their own implementation of the
-[`writable._write()`][stream-_write].
+The return value is `true` if the internal buffer is less than the
+`highWaterMark` configured when the stream was created after admitting `chunk`.
+If `false` is returned, further attempts to write data to the stream should
+stop until the [`'drain'`][] event is emitted.
 
-This function MUST NOT be called by application code directly. It should be
-implemented by child classes, and called by the internal `Writable` class
-methods only.
+While a stream is not draining, calls to `write()` will buffer `chunk`, and
+return false. Once all currently buffered chunks are drained (accepted for
+delivery by the operating system), the `'drain'` event will be emitted.
+Once `write()` returns false, do not write more chunks
+until the `'drain'` event is emitted. While calling `write()` on a stream that
+is not draining is allowed, Node.js will buffer all written chunks until
+maximum memory usage occurs, at which point it will abort unconditionally.
+Even before it aborts, high memory usage will cause poor garbage collector
+performance and high RSS (which is not typically released back to the system,
+even after the memory is no longer required). Since TCP sockets may never
+drain if the remote peer does not read the data, writing a socket that is
+not draining may lead to a remotely exploitable vulnerability.
 
-The `callback` function must be called synchronously inside of
-`writable._write()` or asynchronously (i.e. different tick) to signal either
-that the write completed successfully or failed with an error.
-The first argument passed to the `callback` must be the `Error` object if the
-call failed or `null` if the write succeeded.
+Writing data while the stream is not draining is particularly
+problematic for a [`Transform`][], because the `Transform` streams are paused
+by default until they are piped or a `'data'` or `'readable'` event handler
+is added.
 
-All calls to `writable.write()` that occur between the time `writable._write()`
-is called and the `callback` is called will cause the written data to be
-buffered. When the `callback` is invoked, the stream might emit a [`'drain'`][]
-event. If a stream implementation is capable of processing multiple chunks of
-data at once, the `writable._writev()` method should be implemented.
+If the data to be written can be generated or fetched on demand, it is
+recommended to encapsulate the logic into a [`Readable`][] and use
+[`stream.pipe()`][]. However, if calling `write()` is preferred, it is
+possible to respect backpressure and avoid memory issues using the
+[`'drain'`][] event:
 
-If the `decodeStrings` property is explicitly set to `false` in the constructor
-options, then `chunk` will remain the same object that is passed to `.write()`,
-and may be a string rather than a `Buffer`. This is to support implementations
-that have an optimized handling for certain string data encodings. In that case,
-the `encoding` argument will indicate the character encoding of the string.
-Otherwise, the `encoding` argument can be safely ignored.
+```js
+function write(data, cb) {
+  if (!stream.write(data)) {
+    stream.once('drain', cb);
+  } else {
+    process.nextTick(cb);
+  }
+}
 
-The `writable._write()` method is prefixed with an underscore because it is
-internal to the class that defines it, and should never be called directly by
-user programs.
+// Wait for cb to be called before doing any other write.
+write('hello', () => {
+  console.log('Write completed, do more writes now.');
+});
+```
+
+A `Writable` stream in object mode will always ignore the `encoding` argument.

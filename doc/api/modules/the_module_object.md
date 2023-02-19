@@ -1,10 +1,16 @@
-## The `Module` object
+## The `module` object
 
-This section was moved to
-[Modules: `module` core module](module.md#the-module-object).
+<!-- YAML
+added: v0.1.16
+-->
 
-<!-- Anchors to make sure old links find a target -->
+<!-- type=var -->
 
-* <a id="modules_module_builtinmodules" href="module.html#modulebuiltinmodules">`module.builtinModules`</a>
-* <a id="modules_module_createrequire_filename" href="module.html#modulecreaterequirefilename">`module.createRequire(filename)`</a>
-* <a id="modules_module_syncbuiltinesmexports" href="module.html#modulesyncbuiltinesmexports">`module.syncBuiltinESMExports()`</a>
+<!-- name=module -->
+
+* {Object}
+
+In each module, the `module` free variable is a reference to the object
+representing the current module. For convenience, `module.exports` is
+also accessible via the `exports` module-global. `module` is not actually
+a global but rather local to each module.

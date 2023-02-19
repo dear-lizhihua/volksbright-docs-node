@@ -1,7 +1,8 @@
 #### Event: `'close'`
 
 <!-- YAML
-added: v0.1.93
+added: v15.4.0
 -->
 
-Emitted when the {fs.WriteStream}'s underlying file descriptor has been closed.
+The `'close'` event is emitted when the {FileHandle} has been closed and can no
+longer be used.

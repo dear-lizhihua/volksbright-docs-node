@@ -1,4 +1,4 @@
-### `napi_is_error`
+#### `napi_is_error`
 
 <!-- YAML
 added: v8.0.0
@@ -6,13 +6,16 @@ napiVersion: 1
 -->
 
 ```c
-napi_status napi_is_error(napi_env env, napi_value value, bool* result)
+NAPI_EXTERN napi_status napi_is_error(napi_env env,
+                                      napi_value value,
+                                      bool* result);
 ```
 
 * `[in] env`: The environment that the API is invoked under.
-* `[in] value`: The JavaScript value to check.
-* `[out] result`: Whether the given `napi_value` represents an `Error` object.
+* `[in] value`: The `napi_value` to be checked.
+* `[out] result`: Boolean value that is set to true if `napi_value` represents
+  an error, false otherwise.
 
 Returns `napi_ok` if the API succeeded.
 
-This API checks if the `Object` passed in is an `Error`.
+This API queries a `napi_value` to check if it represents an error object.

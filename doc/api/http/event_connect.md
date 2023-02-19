@@ -4,19 +4,71 @@
 added: v0.7.0
 -->
 
-* `request` {http.IncomingMessage} Arguments for the HTTP request, as it is in
-  the [`'request'`][] event
-* `socket` {stream.Duplex} Network socket between the server and client
-* `head` {Buffer} The first packet of the tunneling stream (may be empty)
+* `response` {http.IncomingMessage}
+* `socket` {stream.Duplex}
+* `head` {Buffer}
 
-Emitted each time a client requests an HTTP `CONNECT` method. If this event is
-not listened for, then clients requesting a `CONNECT` method will have their
-connections closed.
+Emitted each time a server responds to a request with a `CONNECT` method. If
+this event is not being listened for, clients receiving a `CONNECT` method will
+have their connections closed.
 
 This event is guaranteed to be passed an instance of the {net.Socket} class,
 a subclass of {stream.Duplex}, unless the user specifies a socket
 type other than {net.Socket}.
 
-After this event is emitted, the request's socket will not have a `'data'`
-event listener, meaning it will need to be bound in order to handle data
-sent to the server on that socket.
+A client and server pair demonstrating how to listen for the `'connect'` event:
+
+```js
+const http = require('node:http');
+const net = require('node:net');
+const { URL } = require('node:url');
+
+// Create an HTTP tunneling proxy
+const proxy = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('okay');
+});
+proxy.on('connect', (req, clientSocket, head) => {
+  // Connect to an origin server
+  const { port, hostname } = new URL(`http://${req.url}`);
+  const serverSocket = net.connect(port || 80, hostname, () => {
+    clientSocket.write('HTTP/1.1 200 Connection Established\r\n' +
+                    'Proxy-agent: Node.js-Proxy\r\n' +
+                    '\r\n');
+    serverSocket.write(head);
+    serverSocket.pipe(clientSocket);
+    clientSocket.pipe(serverSocket);
+  });
+});
+
+// Now that proxy is running
+proxy.listen(1337, '127.0.0.1', () => {
+
+  // Make a request to a tunneling proxy
+  const options = {
+    port: 1337,
+    host: '127.0.0.1',
+    method: 'CONNECT',
+    path: 'www.google.com:80',
+  };
+
+  const req = http.request(options);
+  req.end();
+
+  req.on('connect', (res, socket, head) => {
+    console.log('got connected!');
+
+    // Make a request over an HTTP tunnel
+    socket.write('GET / HTTP/1.1\r\n' +
+                 'Host: www.google.com:80\r\n' +
+                 'Connection: close\r\n' +
+                 '\r\n');
+    socket.on('data', (chunk) => {
+      console.log(chunk.toString());
+    });
+    socket.on('end', () => {
+      proxy.close();
+    });
+  });
+});
+```

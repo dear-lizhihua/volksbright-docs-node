@@ -10,7 +10,11 @@ added: v8.4.0
   stream).
 
 The `'frameError'` event is emitted when an error occurs while attempting to
-send a frame. When invoked, the handler function will receive an integer
-argument identifying the frame type, and an integer argument identifying the
-error code. The `Http2Stream` instance will be destroyed immediately after the
-`'frameError'` event is emitted.
+send a frame on the session. If the frame that could not be sent is associated
+with a specific `Http2Stream`, an attempt to emit a `'frameError'` event on the
+`Http2Stream` is made.
+
+If the `'frameError'` event is associated with a stream, the stream will be
+closed and destroyed immediately following the `'frameError'` event. If the
+event is not associated with a stream, the `Http2Session` will be shut down
+immediately following the `'frameError'` event.

@@ -17,11 +17,11 @@ function completer(line) {
 }
 ```
 
-The `completer` function can be called asynchronously if it accepts two
-arguments:
+The `completer` function can also returns a {Promise}, or be asynchronous:
 
 ```js
-function completer(linePartial, callback) {
-  callback(null, [['123'], linePartial]);
+async function completer(linePartial) {
+  await someAsyncWork();
+  return [['123'], linePartial];
 }
 ```

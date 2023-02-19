@@ -13,4 +13,4 @@ all active sessions.
 
 If `callback` is provided, it is not invoked until all active sessions have been
 closed, although the server has already stopped allowing new sessions. See
-[`tls.Server.close()`][] for more details.
+[`net.Server.close()`][] for more details.

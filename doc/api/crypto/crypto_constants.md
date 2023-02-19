@@ -1,5 +1,11 @@
-## Crypto constants
+### `crypto.constants`
 
-The following constants exported by `crypto.constants` apply to various uses of
-the `node:crypto`, `node:tls`, and `node:https` modules and are generally
-specific to OpenSSL.
+<!-- YAML
+added: v6.3.0
+-->
+
+* {Object}
+
+An object containing commonly used constants for crypto and security related
+operations. The specific constants currently defined are described in
+[Crypto constants][].

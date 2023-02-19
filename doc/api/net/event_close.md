@@ -1,10 +1,8 @@
 ### Event: `'close'`
 
 <!-- YAML
-added: v0.1.90
+added: v0.5.0
 -->
 
-* `hadError` {boolean} `true` if the socket had a transmission error.
-
-Emitted once the socket is fully closed. The argument `hadError` is a boolean
-which says if the socket was closed due to a transmission error.
+Emitted when the server closes. If connections exist, this
+event is not emitted until all connections are ended.

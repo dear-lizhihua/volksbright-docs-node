@@ -6,9 +6,8 @@ added: v10.5.0
 
 * `value` {any} The transmitted value
 
-The `'message'` event is emitted when the worker thread has invoked
-[`require('node:worker_threads').parentPort.postMessage()`][].
-See the [`port.on('message')`][] event for more details.
+The `'message'` event is emitted for any incoming message, containing the cloned
+input of [`port.postMessage()`][].
 
-All messages sent from the worker thread are emitted before the
-[`'exit'` event][] is emitted on the `Worker` object.
+Listeners on this event receive a clone of the `value` parameter as passed
+to `postMessage()` and no further arguments.

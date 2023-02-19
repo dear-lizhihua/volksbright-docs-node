@@ -10,32 +10,46 @@ added: v8.4.0
 * `rawHeaders` {Array} An array containing the raw header names followed by
   their respective values.
 
-The `'stream'` event is emitted when a `'stream'` event has been emitted by
-an `Http2Session` associated with the server.
-
-See also [`Http2Session`'s `'stream'` event][].
+The `'stream'` event is emitted when a new `Http2Stream` is created.
 
 ```js
 const http2 = require('node:http2');
-const {
-  HTTP2_HEADER_METHOD,
-  HTTP2_HEADER_PATH,
-  HTTP2_HEADER_STATUS,
-  HTTP2_HEADER_CONTENT_TYPE,
-} = http2.constants;
-
-const options = getOptionsSomehow();
-
-const server = http2.createSecureServer(options);
-server.on('stream', (stream, headers, flags) => {
-  const method = headers[HTTP2_HEADER_METHOD];
-  const path = headers[HTTP2_HEADER_PATH];
+session.on('stream', (stream, headers, flags) => {
+  const method = headers[':method'];
+  const path = headers[':path'];
   // ...
   stream.respond({
-    [HTTP2_HEADER_STATUS]: 200,
-    [HTTP2_HEADER_CONTENT_TYPE]: 'text/plain; charset=utf-8',
+    ':status': 200,
+    'content-type': 'text/plain; charset=utf-8',
   });
   stream.write('hello ');
   stream.end('world');
 });
 ```
+
+On the server side, user code will typically not listen for this event directly,
+and would instead register a handler for the `'stream'` event emitted by the
+`net.Server` or `tls.Server` instances returned by `http2.createServer()` and
+`http2.createSecureServer()`, respectively, as in the example below:
+
+```js
+const http2 = require('node:http2');
+
+// Create an unencrypted HTTP/2 server
+const server = http2.createServer();
+
+server.on('stream', (stream, headers) => {
+  stream.respond({
+    'content-type': 'text/html; charset=utf-8',
+    ':status': 200,
+  });
+  stream.on('error', (error) => console.error(error));
+  stream.end('<h1>Hello World</h1>');
+});
+
+server.listen(80);
+```
+
+Even though HTTP/2 streams and network sockets are not in a 1:1 correspondence,
+a network error will destroy each individual stream and must be handled on the
+stream level, as shown above.

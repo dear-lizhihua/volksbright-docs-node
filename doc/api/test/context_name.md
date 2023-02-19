@@ -6,4 +6,4 @@ added:
   - v16.18.0
 -->
 
-The name of the suite.
+The name of the test.

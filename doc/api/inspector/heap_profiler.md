@@ -2,10 +2,10 @@
 
 Here's an example showing how to use the [Heap Profiler][]:
 
-```js
-const inspector = require('node:inspector');
-const fs = require('node:fs');
-const session = new inspector.Session();
+```mjs
+import { Session } from 'node:inspector/promises';
+import fs from 'node:fs';
+const session = new Session();
 
 const fd = fs.openSync('profile.heapsnapshot', 'w');
 
@@ -15,9 +15,8 @@ session.on('HeapProfiler.addHeapSnapshotChunk', (m) => {
   fs.writeSync(fd, m.params.chunk);
 });
 
-session.post('HeapProfiler.takeHeapSnapshot', null, (err, r) => {
-  console.log('HeapProfiler.takeHeapSnapshot done:', err, r);
-  session.disconnect();
-  fs.closeSync(fd);
-});
+const result = await session.post('HeapProfiler.takeHeapSnapshot', null);
+console.log('HeapProfiler.takeHeapSnapshot done:', result);
+session.disconnect();
+fs.closeSync(fd);
 ```

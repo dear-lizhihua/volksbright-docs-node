@@ -1,24 +1,45 @@
-## Event: `'exit'`
+### Event: `'exit'`
 
 <!-- YAML
-added: v0.7.9
+added: v0.11.2
 -->
 
-* `worker` {cluster.Worker}
 * `code` {number} The exit code, if it exited normally.
 * `signal` {string} The name of the signal (e.g. `'SIGHUP'`) that caused
   the process to be killed.
 
-When any of the workers die the cluster module will emit the `'exit'` event.
+Similar to the `cluster.on('exit')` event, but specific to this worker.
 
-This can be used to restart the worker by calling [`.fork()`][] again.
+```mjs
+import cluster from 'node:cluster';
 
-```js
-cluster.on('exit', (worker, code, signal) => {
-  console.log('worker %d died (%s). restarting...',
-              worker.process.pid, signal || code);
-  cluster.fork();
-});
+if (cluster.isPrimary) {
+  const worker = cluster.fork();
+  worker.on('exit', (code, signal) => {
+    if (signal) {
+      console.log(`worker was killed by signal: ${signal}`);
+    } else if (code !== 0) {
+      console.log(`worker exited with error code: ${code}`);
+    } else {
+      console.log('worker success!');
+    }
+  });
+}
 ```
 
-See [`child_process` event: `'exit'`][].
+```cjs
+const cluster = require('node:cluster');
+
+if (cluster.isPrimary) {
+  const worker = cluster.fork();
+  worker.on('exit', (code, signal) => {
+    if (signal) {
+      console.log(`worker was killed by signal: ${signal}`);
+    } else if (code !== 0) {
+      console.log(`worker exited with error code: ${code}`);
+    } else {
+      console.log('worker success!');
+    }
+  });
+}
+```

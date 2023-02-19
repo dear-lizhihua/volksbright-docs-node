@@ -1,6 +1,23 @@
-#### Event: `'end'`
+##### Event: `'end'`
 
-The [`'end'`][] event is from the `stream.Readable` class. The `'end'` event is
-emitted after all data has been output, which occurs after the callback in
-[`transform._flush()`][stream-_flush] has been called. In the case of an error,
-`'end'` should not be emitted.
+<!-- YAML
+added: v0.9.4
+-->
+
+The `'end'` event is emitted when there is no more data to be consumed from
+the stream.
+
+The `'end'` event **will not be emitted** unless the data is completely
+consumed. This can be accomplished by switching the stream into flowing mode,
+or by calling [`stream.read()`][stream-read] repeatedly until all data has been
+consumed.
+
+```js
+const readable = getReadableStreamSomehow();
+readable.on('data', (chunk) => {
+  console.log(`Received ${chunk.length} bytes of data.`);
+});
+readable.on('end', () => {
+  console.log('There will be no more data.');
+});
+```

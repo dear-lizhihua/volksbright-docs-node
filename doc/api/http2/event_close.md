@@ -4,5 +4,5 @@
 added: v8.4.0
 -->
 
-Indicates that the underlying [`Http2Stream`][] was terminated before
-[`response.end()`][] was called or able to flush.
+The `'close'` event is emitted once the `Http2Session` has been destroyed. Its
+listener does not expect any arguments.

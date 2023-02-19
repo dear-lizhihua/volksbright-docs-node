@@ -1,10 +1,8 @@
 ### `resolver.cancel()`
 
 <!-- YAML
-added:
-  - v15.3.0
-  - v14.17.0
+added: v8.3.0
 -->
 
 Cancel all outstanding DNS queries made by this resolver. The corresponding
-promises will be rejected with an error with the code `ECANCELLED`.
+callbacks will be called with an error with code `ECANCELLED`.

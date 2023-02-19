@@ -1,18 +1,15 @@
-## Event: `'online'`
+### Event: `'online'`
 
 <!-- YAML
 added: v0.7.0
 -->
 
-* `worker` {cluster.Worker}
-
-After forking a new worker, the worker should respond with an online message.
-When the primary receives an online message it will emit this event.
-The difference between `'fork'` and `'online'` is that fork is emitted when the
-primary forks a worker, and `'online'` is emitted when the worker is running.
+Similar to the `cluster.on('online')` event, but specific to this worker.
 
 ```js
-cluster.on('online', (worker) => {
-  console.log('Yay, the worker responded after it was forked');
+cluster.fork().on('online', () => {
+  // Worker is online
 });
 ```
+
+It is not emitted in the worker.

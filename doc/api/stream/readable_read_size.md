@@ -1,38 +1,83 @@
-#### `readable._read(size)`
+##### `readable.read([size])`
 
 <!-- YAML
 added: v0.9.4
 -->
 
-* `size` {number} Number of bytes to read asynchronously
+* `size` {number} Optional argument to specify how much data to read.
+* Returns: {string|Buffer|null|any}
 
-This function MUST NOT be called by application code directly. It should be
-implemented by child classes, and called by the internal `Readable` class
-methods only.
+The `readable.read()` method reads data out of the internal buffer and
+returns it. If no data is available to be read, `null` is returned. By default,
+the data is returned as a `Buffer` object unless an encoding has been
+specified using the `readable.setEncoding()` method or the stream is operating
+in object mode.
 
-All `Readable` stream implementations must provide an implementation of the
-[`readable._read()`][] method to fetch data from the underlying resource.
+The optional `size` argument specifies a specific number of bytes to read. If
+`size` bytes are not available to be read, `null` will be returned _unless_
+the stream has ended, in which case all of the data remaining in the internal
+buffer will be returned.
 
-When [`readable._read()`][] is called, if data is available from the resource,
-the implementation should begin pushing that data into the read queue using the
-[`this.push(dataChunk)`][stream-push] method. `_read()` will be called again
-after each call to [`this.push(dataChunk)`][stream-push] once the stream is
-ready to accept more data. `_read()` may continue reading from the resource and
-pushing data until `readable.push()` returns `false`. Only when `_read()` is
-called again after it has stopped should it resume pushing additional data into
-the queue.
+If the `size` argument is not specified, all of the data contained in the
+internal buffer will be returned.
 
-Once the [`readable._read()`][] method has been called, it will not be called
-again until more data is pushed through the [`readable.push()`][stream-push]
-method. Empty data such as empty buffers and strings will not cause
-[`readable._read()`][] to be called.
+The `size` argument must be less than or equal to 1 GiB.
 
-The `size` argument is advisory. For implementations where a "read" is a
-single operation that returns data can use the `size` argument to determine how
-much data to fetch. Other implementations may ignore this argument and simply
-provide data whenever it becomes available. There is no need to "wait" until
-`size` bytes are available before calling [`stream.push(chunk)`][stream-push].
+The `readable.read()` method should only be called on `Readable` streams
+operating in paused mode. In flowing mode, `readable.read()` is called
+automatically until the internal buffer is fully drained.
 
-The [`readable._read()`][] method is prefixed with an underscore because it is
-internal to the class that defines it, and should never be called directly by
-user programs.
+```js
+const readable = getReadableStreamSomehow();
+
+// 'readable' may be triggered multiple times as data is buffered in
+readable.on('readable', () => {
+  let chunk;
+  console.log('Stream is readable (new data received in buffer)');
+  // Use a loop to make sure we read all currently available data
+  while (null !== (chunk = readable.read())) {
+    console.log(`Read ${chunk.length} bytes of data...`);
+  }
+});
+
+// 'end' will be triggered once when there is no more data available
+readable.on('end', () => {
+  console.log('Reached end of stream.');
+});
+```
+
+Each call to `readable.read()` returns a chunk of data, or `null`. The chunks
+are not concatenated. A `while` loop is necessary to consume all data
+currently in the buffer. When reading a large file `.read()` may return `null`,
+having consumed all buffered content so far, but there is still more data to
+come not yet buffered. In this case a new `'readable'` event will be emitted
+when there is more data in the buffer. Finally the `'end'` event will be
+emitted when there is no more data to come.
+
+Therefore to read a file's whole contents from a `readable`, it is necessary
+to collect chunks across multiple `'readable'` events:
+
+```js
+const chunks = [];
+
+readable.on('readable', () => {
+  let chunk;
+  while (null !== (chunk = readable.read())) {
+    chunks.push(chunk);
+  }
+});
+
+readable.on('end', () => {
+  const content = chunks.join('');
+});
+```
+
+A `Readable` stream in object mode will always return a single item from
+a call to [`readable.read(size)`][stream-read], regardless of the value of the
+`size` argument.
+
+If the `readable.read()` method returns a chunk of data, a `'data'` event will
+also be emitted.
+
+Calling [`stream.read([size])`][stream-read] after the [`'end'`][] event has
+been emitted will return `null`. No runtime error will be raised.
